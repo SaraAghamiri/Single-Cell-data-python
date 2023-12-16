@@ -1,0 +1,50 @@
+
+#2. Preprocessing:
+#Quality control: Assess cell viability, gene expression distribution, doublet detection, and library size normalization.
+
+#Python
+import scanpy as sc
+sc.read('matrix.h5ad')
+sc.pp.filter_cells(min_counts=1000, max_counts=20000)
+sc.pp.normalize_total(target_sum=10000)
+
+
+#Data normalization: Correct for technical biases like batch effects and unwanted variation.
+
+sc.pp.log1p()
+sc.pp.combat()
+
+
+#Dimensionality reduction: Reduce data complexity while retaining key information for visualization and analysis.
+
+sc.pp.pca(n_comps=50)
+sc.pp.tsne()
+
+
+#3. Cell Clustering and Annotation:
+#Clustering: Identify groups of cells with similar gene expression patterns.
+
+sc.tl.cluster(sc.obsm['X_tsne'], key='louvain')
+
+
+#Cell type annotation: Assign cell identities based on known marker genes or reference datasets.
+
+sc.tl.annotate(sc.pa.DEGs(groupby='louvain'))
+sc.read_harmony_dataset('human_pancreas.h5ad')
+sc.integrate_to_reference('human_pancreas')
+sc.obsm['louvain_harmony'] = sc.reference_harmonized.obsm['louvain']
+
+
+#4. Differential Expression Analysis:
+#Identify genes differentially expressed between cell clusters or conditions.
+
+de_genes = sc.tl.differential_expression(groupby='louvain', test='wilcoxon')
+sc.plotting.dotplot(de_genes, color=['red', 'green'])
+
+
+# 5. Visualization and Interpretation:
+#Use various plots and interactive tools to explore cell relationships, gene expression patterns, and biological insights.
+
+sc.pl.scatter(sc.obsm['X_tsne'], color='louvain', title='Cell Clusters')
+sc.pl.umap(sc.obsm['X_umap'], color='DE_genes', title='Differentially Expressed Genes')
+sc.open_browser()  # Open interactive cell browser
